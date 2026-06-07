@@ -29,8 +29,6 @@ export default function App() {
     setIsGenerating(true);
     setError(null);
 
-    const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-
     const prompt = `You are a dramatic screenwriter. You will retell exactly what the provided code does as a scene from the requested show.
 
 Rules:
@@ -46,55 +44,24 @@ Format the script clearly. Use uppercase for character names. Do not use <center
 Retell this code as a scene from "${showName}":\n\n${codeSnippet} IMPORTANT: Output ONLY the script. No intro or outro text. Use standard screenplay format with Character names in **BOLD**.`;
 
     try {
-      // // Switched to Gemini 2.5 Flash Lite as it has higher RPM (10)
-      // const response = await fetch(`/.netlify/functions/gemini-proxy`, {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //   },
-      //   body: JSON.stringify({
-      //     contents: [{ parts: [{ text: prompt }] }],
-      //     generationConfig: {
-      //       temperature: 0.7,
-      //       topP: 0.95,
-      //       topK: 40,
-      //     },
-      //   }),
-      // });
-
-      // if (response.status === 429) {
-      //   throw new Error(
-      //     "Rate limit reached (Free Tier). Please wait 60 seconds before trying again.",
-      //   );
-      // }
-
-      // if (!response.ok) {
-      //   const errorData = await response.json().catch(() => ({}));
-      //   throw new Error(
-      //     errorData.error?.message || "Failed to generate scene.",
-      //   );
-      // }
-
-      // const data = await response.json();
-      // const generatedText =
-      //   data.candidates?.[0]?.content?.parts?.[0]?.text ||
-      //   "No content generated";
-      // setGeneratedScene(generatedText);
-
-      // CALL GOOGLE DIRECTLY (Temporary for local dev)
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-          }),
+      const response = await fetch(`/.netlify/functions/gemini-proxy`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+        }),
+      });
+
+      if (response.status === 429) {
+        throw new Error(
+          "Rate limit reached. Please wait a moment before trying again.",
+        );
+      }
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         throw new Error(
           errorData.error?.message || "Failed to generate scene.",
         );
